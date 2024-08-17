@@ -1,0 +1,238 @@
+Criando um Banco Digital com Java e Orientação a Objetos
+Criar um banco digital em Java usando o paradigma de orientação a objetos envolve modelar as entidades e operações que compõem um sistema bancário. Vamos construir um exemplo básico, onde teremos contas bancárias, clientes, e operações como depósito, saque e transferência.
+
+### 1. **Modelagem das Classes**
+
+#### 1.1 **Classe `Cliente`**
+Representa o cliente do banco.
+
+```java
+public class Cliente {
+    private String nome;
+    private String cpf;
+
+    public Cliente(String nome, String cpf) {
+        this.nome = nome;
+        this.cpf = cpf;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public String getCpf() {
+        return cpf;
+    }
+}
+```
+
+#### 1.2 **Classe `Conta`**
+Classe base para diferentes tipos de contas bancárias.
+
+```java
+public abstract class Conta {
+    private static int contadorDeContas = 1000;
+    private int numeroConta;
+    private double saldo;
+    private Cliente cliente;
+
+    public Conta(Cliente cliente) {
+        this.cliente = cliente;
+        this.numeroConta = ++contadorDeContas;
+        this.saldo = 0.0;
+    }
+
+    public int getNumeroConta() {
+        return numeroConta;
+    }
+
+    public double getSaldo() {
+        return saldo;
+    }
+
+    public Cliente getCliente() {
+        return cliente;
+    }
+
+    public void depositar(double valor) {
+        if (valor > 0) {
+            saldo += valor;
+            System.out.println("Depósito de R$" + valor + " realizado com sucesso.");
+        } else {
+            System.out.println("Valor inválido para depósito.");
+        }
+    }
+
+    public void sacar(double valor) {
+        if (valor > 0 && saldo >= valor) {
+            saldo -= valor;
+            System.out.println("Saque de R$" + valor + " realizado com sucesso.");
+        } else {
+            System.out.println("Saldo insuficiente ou valor inválido.");
+        }
+    }
+
+    public void transferir(Conta destino, double valor) {
+        if (valor > 0 && saldo >= valor) {
+            this.sacar(valor);
+            destino.depositar(valor);
+            System.out.println("Transferência de R$" + valor + " para a conta " + destino.getNumeroConta() + " realizada com sucesso.");
+        } else {
+            System.out.println("Transferência não realizada.");
+        }
+    }
+
+    public abstract void exibirDetalhes();
+}
+```
+
+#### 1.3 **Classes `ContaCorrente` e `ContaPoupanca`**
+Classes que representam tipos específicos de contas.
+
+```java
+public class ContaCorrente extends Conta {
+    private double limiteChequeEspecial;
+
+    public ContaCorrente(Cliente cliente, double limiteChequeEspecial) {
+        super(cliente);
+        this.limiteChequeEspecial = limiteChequeEspecial;
+    }
+
+    @Override
+    public void sacar(double valor) {
+        if (valor > 0 && (getSaldo() + limiteChequeEspecial) >= valor) {
+            super.sacar(valor);
+        } else {
+            System.out.println("Saldo insuficiente e/ou limite de cheque especial excedido.");
+        }
+    }
+
+    @Override
+    public void exibirDetalhes() {
+        System.out.println("Conta Corrente - Número: " + getNumeroConta());
+        System.out.println("Titular: " + getCliente().getNome());
+        System.out.println("Saldo: R$" + getSaldo());
+        System.out.println("Limite Cheque Especial: R$" + limiteChequeEspecial);
+    }
+}
+
+public class ContaPoupanca extends Conta {
+    private double taxaRendimento;
+
+    public ContaPoupanca(Cliente cliente, double taxaRendimento) {
+        super(cliente);
+        this.taxaRendimento = taxaRendimento;
+    }
+
+    public void aplicarRendimento() {
+        double rendimento = getSaldo() * taxaRendimento;
+        depositar(rendimento);
+        System.out.println("Rendimento de R$" + rendimento + " aplicado à conta.");
+    }
+
+    @Override
+    public void exibirDetalhes() {
+        System.out.println("Conta Poupança - Número: " + getNumeroConta());
+        System.out.println("Titular: " + getCliente().getNome());
+        System.out.println("Saldo: R$" + getSaldo());
+        System.out.println("Taxa de Rendimento: " + (taxaRendimento * 100) + "%");
+    }
+}
+```
+
+#### 1.4 **Classe `Banco`**
+Classe responsável por gerenciar clientes e contas.
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+public class Banco {
+    private String nome;
+    private List<Conta> contas;
+
+    public Banco(String nome) {
+        this.nome = nome;
+        this.contas = new ArrayList<>();
+    }
+
+    public void adicionarConta(Conta conta) {
+        contas.add(conta);
+    }
+
+    public Conta buscarConta(int numeroConta) {
+        for (Conta conta : contas) {
+            if (conta.getNumeroConta() == numeroConta) {
+                return conta;
+            }
+        }
+        return null;
+    }
+
+    public void exibirContas() {
+        for (Conta conta : contas) {
+            conta.exibirDetalhes();
+            System.out.println("-----------------------------");
+        }
+    }
+}
+```
+
+### 2. **Execução do Sistema**
+
+Agora, vamos criar uma classe `Main` para executar o sistema e simular operações bancárias.
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        // Criando o banco
+        Banco banco = new Banco("Banco Digital");
+
+        // Criando clientes
+        Cliente cliente1 = new Cliente("João Silva", "111.222.333-44");
+        Cliente cliente2 = new Cliente("Maria Oliveira", "555.666.777-88");
+
+        // Criando contas
+        ContaCorrente contaCorrente = new ContaCorrente(cliente1, 500.0);
+        ContaPoupanca contaPoupanca = new ContaPoupanca(cliente2, 0.01);
+
+        // Adicionando contas ao banco
+        banco.adicionarConta(contaCorrente);
+        banco.adicionarConta(contaPoupanca);
+
+        // Operações bancárias
+        contaCorrente.depositar(1000.0);
+        contaCorrente.sacar(200.0);
+        contaPoupanca.depositar(1500.0);
+        contaPoupanca.aplicarRendimento();
+
+        // Transferência entre contas
+        contaCorrente.transferir(contaPoupanca, 300.0);
+
+        // Exibindo detalhes das contas
+        banco.exibirContas();
+    }
+}
+```
+
+### 3. **Explicação do Sistema**
+
+1. **Cliente**: Classe que contém informações sobre o cliente, como nome e CPF.
+   
+2. **Conta**: Classe abstrata que serve de base para diferentes tipos de contas. Possui métodos comuns como `depositar`, `sacar` e `transferir`.
+
+3. **ContaCorrente**: Subclasse de `Conta` que implementa a lógica específica para contas correntes, incluindo o cheque especial.
+
+4. **ContaPoupanca**: Subclasse de `Conta` que implementa a lógica específica para contas poupança, incluindo a aplicação de rendimentos.
+
+5. **Banco**: Classe que gerencia as contas e os clientes, oferecendo métodos para adicionar contas, buscar contas e exibir detalhes das contas.
+
+6. **Main**: Classe que simula as operações bancárias, incluindo depósitos, saques, transferências e a aplicação de rendimentos.
+
+### 4. **Possíveis Extensões**
+- **Sistema de autenticação** para garantir que apenas clientes autenticados possam realizar operações.
+- **Relatórios financeiros** para exibir saldos, extratos e outras informações relevantes.
+- **Interface gráfica** ou uma API REST para interagir com o banco digital.
+- **Suporte a múltiplas moedas** e contas em diferentes países.
+
+Este é um exemplo básico de como criar um banco digital em Java usando orientação a objetos. O sistema pode ser expandido e aprimorado de acordo com as necessidades.
